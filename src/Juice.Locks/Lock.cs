@@ -14,6 +14,8 @@
         public string Key { get; init; }
         public string Value { get; init; }
 
+        public event EventHandler<LockEventArgs> Released;
+
 
         #region IDisposable Support
 
@@ -30,6 +32,15 @@
                     try
                     {
                         _locker.ReleaseLock(this);
+                    }
+                    catch { }
+                    try
+                    {
+                        var handler = Released;
+                        if (handler != null)
+                        {
+                            handler(this, new LockEventArgs { Key = Key, Issuer = Value });
+                        }
                     }
                     catch { }
                 }
