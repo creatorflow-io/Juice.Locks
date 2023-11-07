@@ -69,6 +69,10 @@ namespace Juice.Locks.Tests
 
                     if (@lock != null)
                     {
+                        @lock.Released += (sender, e) =>
+                        {
+                            _output.WriteLine($"lock released {e.Key} {e.Issuer} {DateTimeOffset.Now.ToUnixTimeMilliseconds()}");
+                        };
                         Interlocked.Increment(ref lockCounds[x]);
                         _output.WriteLine($"{person} begin eat {food}(with lock) at {DateTimeOffset.Now.ToUnixTimeMilliseconds()}.");
                         if (new Random().NextDouble() < 0.6)
