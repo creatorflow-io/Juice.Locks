@@ -13,6 +13,19 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Juice.Locks.Tests", "test\J
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Juice.Locks.Redis", "src\Juice.Locks.Redis\Juice.Locks.Redis.csproj", "{056F6287-3D88-4673-A3DB-F886E3818B30}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F4F2C986-593F-4D66-8F0E-A44AB4160218}"
+	ProjectSection(SolutionItems) = preProject
+		Directory.Build.props = Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GitHub Actions", "GitHub Actions", "{1B950F57-0DF1-45D6-A301-34D29818B8B9}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\alpha.yml = .github\workflows\alpha.yml
+		.github\workflows\beta.yml = .github\workflows\beta.yml
+		.github\workflows\build-test.yml = .github\workflows\build-test.yml
+		.github\workflows\nuget-release.yml = .github\workflows\nuget-release.yml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

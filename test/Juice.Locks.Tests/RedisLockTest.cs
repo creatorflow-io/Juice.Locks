@@ -65,7 +65,7 @@ namespace Juice.Locks.Tests
                 Parallel.For(0, parallelInstances, y =>
                 {
                     string person = $"person:{y}";
-                    using var @lock = locker.AcquireLock(lockObj, TimeSpan.FromMinutes(1), obj => obj.Id, person);
+                    var @lock = locker.AcquireLock(lockObj, TimeSpan.FromMinutes(1), obj => obj.Id, person);
 
                     if (@lock != null)
                     {
@@ -74,18 +74,22 @@ namespace Juice.Locks.Tests
                             _output.WriteLine($"lock released {e.Key} {e.Issuer} {DateTimeOffset.Now.ToUnixTimeMilliseconds()}");
                         };
                         Interlocked.Increment(ref lockCounds[x]);
-                        _output.WriteLine($"{person} begin eat {food}(with lock) at {DateTimeOffset.Now.ToUnixTimeMilliseconds()}.");
-                        if (new Random().NextDouble() < 0.6)
+                        using (@lock)
                         {
-                            var released = locker.ReleaseLock(@lock);
+                            _output.WriteLine($"{person} begin eat {food}(with lock) at {DateTimeOffset.Now.ToUnixTimeMilliseconds()}.");
+                            if (new Random().NextDouble() < 0.6)
+                            {
+                                var released = locker.ReleaseLock(@lock);
 
-                            _output.WriteLine($"{person} release lock {released}  {DateTimeOffset.Now.ToUnixTimeMilliseconds()}");
-                        }
-                        else
-                        {
-                            _output.WriteLine($"{person} do not release lock ....");
+                                _output.WriteLine($"{person} release lock {released}  {DateTimeOffset.Now.ToUnixTimeMilliseconds()}");
+                            }
+                            else
+                            {
+                                _output.WriteLine($"{person} do not release lock ....");
+                            }
                         }
                         Interlocked.Decrement(ref lockCounds[x]);
+                        @lock.IsReleased.Should().BeTrue();
                     }
                     else
                     {
@@ -145,10 +149,12 @@ namespace Juice.Locks.Tests
                         var released = await locker.ReleaseLockAsync(@lock);
 
                         _output.WriteLine($"{person} release lock {released}  {DateTimeOffset.Now.ToUnixTimeMilliseconds()}");
+                        @lock.IsReleased.Should().Equals(released);
                     }
                     else
                     {
                         _output.WriteLine($"{person} do not release lock ....");
+                        @lock.IsReleased.Should().BeFalse();
                     }
                     Interlocked.Decrement(ref lockCount);
                 }
