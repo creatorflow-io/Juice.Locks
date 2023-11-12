@@ -39,4 +39,8 @@
     <PackageLocation>$(SolutionDir)build/publish/$(Configuration)/</PackageLocation>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+  </PropertyGroup>
 </Project>

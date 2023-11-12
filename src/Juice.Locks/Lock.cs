@@ -4,15 +4,22 @@
     {
         protected static int globalCounter = 0;
         private IDistributedLock _locker;
-        public Lock(IDistributedLock locker, string key, string value)
+        public Lock(IDistributedLock locker, string key, string value, DateTimeOffset expiresOn)
         {
             _locker = locker;
             Key = key;
             Value = value;
+            ExpiresOn = expiresOn;
             Interlocked.Increment(ref globalCounter);
         }
         public string Key { get; init; }
         public string Value { get; init; }
+
+        public DateTimeOffset ExpiresOn { get; init; }
+
+        public bool IsExpired => ExpiresOn <= DateTimeOffset.UtcNow;
+
+        public bool IsReleased { get; private set; }
 
         public event EventHandler<LockEventArgs> Released;
 
@@ -31,7 +38,10 @@
                     //  dispose managed state (managed objects).
                     try
                     {
-                        _locker.ReleaseLock(this);
+                        if (_locker.ReleaseLock(this))
+                        {
+                            IsReleased = true;
+                        }
                     }
                     catch { }
                     try

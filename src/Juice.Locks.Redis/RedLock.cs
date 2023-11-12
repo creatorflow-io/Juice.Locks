@@ -40,7 +40,7 @@ namespace Juice.Locks.Redis
                 var flag = Connection.GetDatabase().StringSet(key, issuer ?? "", expiration, When.NotExists);
                 if (flag || Connection.GetDatabase().StringGet(key).ToString() == issuer)
                 {
-                    return new Lock(this, key, issuer ?? "");
+                    return new Lock(this, key, issuer ?? "", DateTimeOffset.Now.Add(expiration));
                 }
             }
             catch (Exception ex)
@@ -62,7 +62,12 @@ namespace Juice.Locks.Redis
                 var flag = await Connection.GetDatabase().StringSetAsync(key, issuer ?? "", expiration, When.NotExists);
                 if (flag || (issuer != "" && (await Connection.GetDatabase().StringGetAsync(key)).ToString() == issuer))
                 {
-                    return new Lock(this, key, issuer ?? "");
+                    if (!flag)
+                    {
+                        // renew lock expiration
+                        await Connection.GetDatabase().KeyExpireAsync(key, expiration);
+                    }
+                    return new Lock(this, key, issuer ?? "", DateTimeOffset.Now.Add(expiration));
                 }
             }
             catch (Exception ex)
