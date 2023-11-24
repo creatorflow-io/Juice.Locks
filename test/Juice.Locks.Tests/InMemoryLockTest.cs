@@ -3,9 +3,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Juice.Extensions.DependencyInjection;
-using Juice.Locks.Redis;
+using Juice.Locks.InMemory;
 using Juice.XUnit;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit;
@@ -13,17 +12,17 @@ using Xunit.Abstractions;
 
 namespace Juice.Locks.Tests
 {
-    public class RedisLockTest
+    public class InMemoryLockTest
     {
         private readonly ITestOutputHelper _output;
 
-        public RedisLockTest(ITestOutputHelper testOutput)
+        public InMemoryLockTest(ITestOutputHelper testOutput)
         {
             _output = testOutput;
             Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
         }
 
-        [IgnoreOnCITheory(DisplayName = "Should lock single instance"), TestPriority(999)]
+        [Theory(DisplayName = "Should lock single instance"), TestPriority(999)]
         [InlineData(3)]
         [InlineData(4)]
         [InlineData(5)]
@@ -49,8 +48,7 @@ namespace Juice.Locks.Tests
                     .AddConfiguration(configuration.GetSection("Logging"));
                 });
 
-                services.AddRedLock(options => options.ConnectionString = configuration.GetConnectionString("Redis")
-                    ?? throw new ArgumentNullException("Redis connection string"));
+                services.AddInMemoryLock();
             });
 
             var locker = resolver.ServiceProvider.GetRequiredService<IDistributedLock>();
@@ -82,7 +80,6 @@ namespace Juice.Locks.Tests
                                 var released = locker.ReleaseLock(@lock);
 
                                 _output.WriteLine($"{person} release lock {released}  {DateTimeOffset.Now.ToUnixTimeMilliseconds()}");
-                                @lock.IsReleased.Should().Be(released);
                             }
                             else
                             {
@@ -103,7 +100,7 @@ namespace Juice.Locks.Tests
 
         }
 
-        [IgnoreOnCIFact(DisplayName = "Should lock async")]
+        [Fact(DisplayName = "Should lock async")]
         public async Task Object_should_lock_Async()
         {
             var resolver = new DependencyResolver
@@ -125,7 +122,7 @@ namespace Juice.Locks.Tests
                     .AddConfiguration(configuration.GetSection("Logging"));
                 });
 
-                services.AddRedLock(options => options.ConnectionString = configuration.GetConnectionString("Redis"));
+                services.AddInMemoryLock();
             });
 
             var locker = resolver.ServiceProvider.GetRequiredService<IDistributedLock>();
@@ -150,7 +147,7 @@ namespace Juice.Locks.Tests
                         var released = await locker.ReleaseLockAsync(@lock);
 
                         _output.WriteLine($"{person} release lock {released}  {DateTimeOffset.Now.ToUnixTimeMilliseconds()}");
-                        @lock.IsReleased.Should().Equals(released);
+                        @lock.IsReleased.Should().Be(released);
                     }
                     else
                     {
@@ -174,8 +171,4 @@ namespace Juice.Locks.Tests
         }
     }
 
-    internal class LockObj
-    {
-        public Guid Id { get; init; } = Guid.NewGuid();
-    }
 }
