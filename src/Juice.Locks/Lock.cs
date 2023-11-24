@@ -1,4 +1,6 @@
-﻿namespace Juice.Locks
+﻿using System.Diagnostics;
+
+namespace Juice.Locks
 {
     public class Lock : ILock
     {
@@ -21,39 +23,51 @@
 
         public bool IsReleased { get; private set; }
 
-        public event EventHandler<LockEventArgs> Released;
+        public event EventHandler<LockEventArgs>? Released;
 
 
         #region IDisposable Support
 
 
         private bool disposedValue = false; // To detect redundant calls
-
-        protected virtual void Dispose(bool disposing)
+        private bool _isReleasing;
+        protected virtual void Dispose(bool callFromLocker)
         {
             if (!disposedValue)
             {
-                if (disposing)
+
+                //  dispose managed state (managed objects).
+                try
                 {
-                    //  dispose managed state (managed objects).
-                    try
+                    if (_isReleasing)
                     {
+                        return;
+                    }
+                    if (!callFromLocker)
+                    {
+                        _isReleasing = true;
                         if (_locker.ReleaseLock(this))
                         {
                             IsReleased = true;
                         }
+                        _isReleasing = false;
                     }
-                    catch { }
-                    try
+                    else
                     {
-                        var handler = Released;
-                        if (handler != null)
-                        {
-                            handler(this, new LockEventArgs { Key = Key, Issuer = Value });
-                        }
+                        IsReleased = true;
                     }
-                    catch { }
                 }
+                catch { }
+                try
+                {
+                    var handler = Released;
+                    if (handler != null && IsReleased)
+                    {
+                        handler(this, new LockEventArgs { Key = Key, Issuer = Value });
+                    }
+                    Released = null;
+                }
+                catch { }
                 Interlocked.Decrement(ref globalCounter);
                 disposedValue = true;
             }
@@ -62,8 +76,9 @@
         // This code added to correctly implement the disposable pattern.
         public void Dispose()
         {
-            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-            Dispose(true);
+            // Do not change this code. Put cleanup code in Dispose(bool callFromLocker) above.
+            var callFromLocker = new StackFrame(1, false).GetMethod()?.DeclaringType?.IsAssignableTo(typeof(IDistributedLock)) ?? false;
+            Dispose(callFromLocker);
             GC.SuppressFinalize(this);
         }
 

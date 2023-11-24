@@ -4,7 +4,7 @@ using StackExchange.Redis;
 
 namespace Juice.Locks.Redis
 {
-    public class RedLock : IDistributedLock
+    internal class RedLock : IDistributedLock
     {
         private static RedisOptions configuration;
         /// <summary>  
@@ -96,6 +96,7 @@ namespace Juice.Locks.Redis
                 var ok = (bool)res;
                 if (ok)
                 {
+                    @lock.Dispose();
                     _logger.LogInformation($"ReleaseLock {@lock.Key} {@lock.Value}");
                     return true;
                 }
@@ -127,6 +128,7 @@ namespace Juice.Locks.Redis
                 var ok = (bool)res;
                 if (ok)
                 {
+                    @lock.Dispose();
                     _logger.LogInformation($"ReleaseLock {@lock.Key} {@lock.Value}");
                     return true;
                 }
