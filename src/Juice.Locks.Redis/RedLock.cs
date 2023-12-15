@@ -140,5 +140,35 @@ namespace Juice.Locks.Redis
                 return false;
             }
         }
+
+        public async Task<bool> ReleaseLockAsync(string key)
+        {
+            string lua_script = @"  
+                if (redis.call('GET', KEYS[1])) then  
+                    redis.call('DEL', KEYS[1])  
+                    return true  
+                else  
+                    return false  
+                end  
+                ";
+
+            try
+            {
+                var res = await Connection.GetDatabase().ScriptEvaluateAsync(lua_script,
+                                                            new RedisKey[] { key });
+                var ok = (bool)res;
+                if (ok)
+                {
+                    _logger.LogInformation($"ReleaseLock {key}");
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"ReleaseLock lock fail...{ex.Message}");
+                return false;
+            }
+        }
     }
 }
