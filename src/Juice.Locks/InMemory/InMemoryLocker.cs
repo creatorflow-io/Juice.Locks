@@ -59,5 +59,10 @@ namespace Juice.Locks.InMemory
         {
             return Task.FromResult(ReleaseLock(@lock));
         }
+        public Task<bool> ReleaseLockAsync(string key)
+        {
+            return Task.FromResult(_locks.TryRemove(key, out var lockItem));
+        }
+
     }
 }

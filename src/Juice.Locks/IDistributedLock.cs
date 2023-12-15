@@ -34,6 +34,12 @@ namespace Juice.Locks
         /// <param name="lock"></param>
         /// <returns></returns>
         Task<bool> ReleaseLockAsync(ILock @lock);
+        /// <summary>
+        /// Release the locks by key
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        Task<bool> ReleaseLockAsync(string key);
     }
 
     public static class LockerExtensions

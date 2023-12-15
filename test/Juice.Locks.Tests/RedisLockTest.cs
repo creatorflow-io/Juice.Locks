@@ -172,6 +172,45 @@ namespace Juice.Locks.Tests
 
             lockCount.Should().BeInRange(0, 1);
         }
+
+        [IgnoreOnCIFact(DisplayName = "Should release lock by key")]
+        public async Task Lock_should_release_Async()
+        {
+            var resolver = new DependencyResolver
+            {
+                CurrentDirectory = AppContext.BaseDirectory
+            };
+
+            resolver.ConfigureServices(services =>
+            {
+                var configService = services.BuildServiceProvider().GetRequiredService<IConfigurationService>();
+                var configuration = configService.GetConfiguration();
+
+                services.AddSingleton(provider => _output);
+
+                services.AddLogging(builder =>
+                {
+                    builder.ClearProviders()
+                    .AddTestOutputLogger()
+                    .AddConfiguration(configuration.GetSection("Logging"));
+                });
+
+                services.AddRedLock(options => options.ConnectionString = configuration.GetConnectionString("Redis")
+                    ?? throw new ArgumentNullException("Redis connection string"));
+            });
+
+            var locker = resolver.ServiceProvider.GetRequiredService<IDistributedLock>();
+
+            var lockObj = new LockObj();
+            var @lock = await locker.AcquireLockAsync(lockObj.Id.ToString(), "A", TimeSpan.FromSeconds(5));
+            @lock.Should().NotBeNull();
+            var @lock2 = await locker.AcquireLockAsync(lockObj.Id.ToString(), "B", TimeSpan.FromSeconds(5));
+            @lock2.Should().BeNull();
+            var released = await locker.ReleaseLockAsync(lockObj.Id.ToString());
+            released.Should().BeTrue();
+            @lock2 = await locker.AcquireLockAsync(lockObj.Id.ToString(), "B", TimeSpan.FromSeconds(5));
+            @lock2.Should().NotBeNull();
+        }
     }
 
     internal class LockObj
